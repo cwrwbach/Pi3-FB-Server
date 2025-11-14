@@ -158,8 +158,8 @@ colour = C_RED;
     xpos++;
     xtra++;
     }
-
- plot_line(spec_buf,0,100 , 400,100,colour);
+colour = C_MAGENTA;
+ plot_line(spec_buf,0,100 , 900,80,colour);
 
 copy_surface_to_framebuf(spec_buf,0,6,g_screen_size_x,SPEC_HEIGHT);
 printf(" FOUND %d \n",__LINE__);
