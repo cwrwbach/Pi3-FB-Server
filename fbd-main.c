@@ -366,8 +366,18 @@ g_speed = 2;
 
 printf(" SETUP ==========================  \n");
 
+do_network_setup();
 
 
+/*
+ int n = recvfrom(sockfd_1, & cmd_msg_buffer, MAX_IN_BUF,MSG_DONTWAIT, NULL,NULL); 
+    if(n > 0) 
+        command_selection(n);
+
+
+  packet_buf_a[0] = 0x42; //Force ID type to be video 1
+    sendto(sockfd_1, packet_buf_a, 1024, 0, (struct sockaddr *) &	cliaddr_1, sizeof(cliaddr_1));
+*/
 
 //Make command tabs
 g_ntabs = CMD_TABS;
