@@ -78,6 +78,9 @@ servaddr_1.sin_port = htons(PORT_1);
 // Bind the socket 
 if ( bind(sockfd_1,(const struct sockaddr *)&servaddr_1, sizeof(servaddr_1)) < 0 ) 
     printf("Bind failed\n"); 
+
+
+
   
 
 while(1)

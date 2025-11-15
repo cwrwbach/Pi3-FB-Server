@@ -84,7 +84,7 @@ buf[location] = colour;
 
 void clear_screen(uint16_t pixval)
 {
-for(int p=0;p<(g_screen_size_x*screen_size_y);p++)
+for(int p=0;p<(g_screen_size_x*(screen_size_y-20));p++)
     frame_buf[p] = pixval;
 }
 
