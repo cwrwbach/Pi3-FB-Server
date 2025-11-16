@@ -16,13 +16,11 @@ uint screen_size_y;
 uint bytes_pp;
 
 //Global buffers
-//uint16_t * frame_buf;
+uint16_t * frame_buf;
 uint16_t * chan_buf_a;
 uint16_t * chan_buf_b;
 uint16_t * chan_buf_c;
 uint16_t * chan_buf_d;
-
-uint16_t * frame_buf;
 uint16_t * wfall_buf;
 uint16_t * cmd_buf;
 uint16_t * fscale_buf;
@@ -36,8 +34,6 @@ char trace_a[1024];
 char trace_b[1024];
 char trace_c[1024];
 char trace_d[1024];
-
-char * tracy;
 
 //================
 
@@ -87,18 +83,11 @@ plot_large_string(fscale_buf,g_screen_size_x -100,20,f_right,C_WHITE);
 
 //-----
 
-
-
-
-
-/////////////////////////////////////////////////////
-
 void draw_trace(uint16_t * buf, int y_pos,int y_size,char * vid_data ,short colour)
 {
 int dummy;
 char y_val;
 char hold;
-//spec_base = CHAN_POS_A;
 
 draw_grid(buf);
 
@@ -107,21 +96,10 @@ for(int p=0;p<1024;p++)
     y_val = vid_data[p];
     plot_line(buf,p,hold , p,y_val,colour);
     hold = y_val;
-
     }
 
-
-
-
-//olour = C_MAGENTA;
-// plot_line(chan_buf_a,0,100 , 900,80,colour);
-
-
 //ioctl(fbfd, FBIO_WAITFORVSYNC, &dummy); // Wait for frame sync
-
 copy_surface_to_framebuf(buf,0,y_pos,g_screen_size_x,y_size);
-//printf(" FOUND %d \n",__LINE__);
-
 }
 
 
@@ -163,44 +141,42 @@ printf(" SETUP ==========================  \n");
 
 
 //make Spectrum frame
-//plot_thick_rectangle(frame_buf,4,0,g_screen_size_x-10,SPEC_HEIGHT+10,C_BLUE);
+plot_thick_rectangle(frame_buf,4,CHAN_POS_A,g_screen_size_x-10,CHAN_HEIGHT_A,C_BLUE);
+
+plot_thick_rectangle(frame_buf,4,CHAN_POS_B,g_screen_size_x-10,CHAN_HEIGHT_B,C_BLUE);
+plot_thick_rectangle(frame_buf,4,CHAN_POS_C,g_screen_size_x-10,CHAN_HEIGHT_C,C_BLUE);
+plot_thick_rectangle(frame_buf,4,CHAN_POS_D,g_screen_size_x-10,CHAN_HEIGHT_D,C_BLUE);
+
 
 while(1)
     {
+//make some test data...
 
     for(int r = 0; r<1024;r++)
         {
         trace_a[r] = rand() % (80 - 1 + 1) + 1;
         }
-for(int r = 0; r<1024;r++)
+    for(int r = 0; r<1024;r++)
         {
         trace_b[r] = r/32;
         }
-for(int r = 0; r<1024;r++)
+    for(int r = 0; r<1024;r++)
         {
-        trace_c[r] = rand() % (80 - 1 + 1) + 1;
+        trace_c[r] = r%8128;
         }
-for(int r = 0; r<1024;r++)
+    for(int r = 0; r<1024;r++)
         {
-        trace_d[r] = rand() % (80 - 1 + 1) + 1;
+        trace_d[r] = (rand() % (80 - 1 + 1) + 1) /4;
         }
-
-
-
-    draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A,trace_a,C_RED);
+//draw all four to test
+    draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, trace_a, C_RED);
     draw_trace(chan_buf_b,CHAN_POS_B,CHAN_HEIGHT_B, trace_b, C_GREEN);
     draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, trace_c, C_BLUE);
     draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, trace_d, C_YELLOW);
 
-    usleep(671000);
-
+    usleep(1000000);
     }
-//loop
 
-
-
-
-//draw_waterfall();
 //do_network_setup();
 
 printf(" END NW SETUP \n");
@@ -213,12 +189,5 @@ printf(" END NW SETUP \n");
     sendto(sockfd_1, packet_buf_a, 1024, 0, (struct sockaddr *) &	cliaddr_1, sizeof(cliaddr_1));
 */
 
-//for(int t = 0; t < g_ntabs;t++)
- //   plot_thick_rectangle(cmd_buf,t * g_tab_width,0,(t*g_tab_width) + g_tab_width,CMD_HEIGHT-6,C_YELLOW);
-
-
 printf(" DONE \n");
-
-
-
 }
