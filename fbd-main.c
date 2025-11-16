@@ -16,8 +16,13 @@ uint screen_size_y;
 uint bytes_pp;
 
 //Global buffers
+//uint16_t * frame_buf;
+uint16_t * chan_buf_a;
+uint16_t * chan_buf_b;
+uint16_t * chan_buf_c;
+uint16_t * chan_buf_d;
+
 uint16_t * frame_buf;
-uint16_t * spec_buf;
 uint16_t * wfall_buf;
 uint16_t * cmd_buf;
 uint16_t * fscale_buf;
@@ -28,33 +33,33 @@ void draw_spectrum(short);
 void draw_waterfall();
 
 char trace_a[1024];
+char trace_b[1024];
+char trace_c[1024];
+char trace_d[1024];
+
+char * tracy;
 
 //================
 
-void draw_grid()
+void draw_grid(uint16_t * buf)
 {
 int i;
 int n_horiz;
 int h_gap;
 
 n_horiz=4;
-h_gap = SPEC_HEIGHT/(n_horiz);
+h_gap = CHAN_HEIGHT_A/(n_horiz);
 
 //fill backround of SPEC
-for(int b=0;b<SPEC_HEIGHT * g_screen_size_x;b++)
-    spec_buf[b] = rgb565(0,32,0);
+for(int b=0;b<CHAN_HEIGHT_A * g_screen_size_x;b++)
+    buf[b] = rgb565(0,32,0);
 
 for(i=1;i<n_horiz;i++){ 
-    printf(" i=%d \n",i);
-    plot_dotted_line(spec_buf,0,i*h_gap,g_screen_size_x,i*h_gap,C_YELLOW);//YELLOW);
+   // printf(" i=%d \n",i);
+    plot_dotted_line(buf,0,i*h_gap,g_screen_size_x,i*h_gap,C_YELLOW);//YELLOW);
     }
-plot_dotted_line(spec_buf,g_screen_size_x/2,0,g_screen_size_x/2,SPEC_HEIGHT,C_YELLOW);//YELLOW);
-/*
-plot_large_string(spec_buf,900,20," -60",C_WHITE);
-plot_large_string(spec_buf,900,60," -80",C_WHITE);
-plot_large_string(spec_buf,900,100,"-100",C_WHITE);
-plot_large_string(spec_buf,900,140,"-120",C_WHITE);
-*/
+plot_dotted_line(buf,g_screen_size_x/2,0,g_screen_size_x/2,CHAN_HEIGHT_A,C_YELLOW);//YELLOW);
+
 }
 
 //-----
@@ -65,7 +70,7 @@ char f_left[32];
 char f_centre[32];
 char f_right[32];
 
-for(int b=0;b<SCALE_HEIGHT * g_screen_size_x;b++)
+for(int b=0;b<CHAN_HEIGHT_A * g_screen_size_x;b++)
     fscale_buf[b] = 0x8000;
 
 sprintf(f_left," Left");
@@ -77,168 +82,45 @@ plot_large_string(fscale_buf,(g_screen_size_x/2) - 50,20,f_centre,C_WHITE);
 plot_large_string(fscale_buf,g_screen_size_x -100,20,f_right,C_WHITE);
 
 //plot_large_string(fscale_buf,g_centre_freq-10000,20,">|<",C_GREEN); //indicator symbol
-copy_surface_to_framebuf(fscale_buf,0,SCALE_POS,g_screen_size_x,SCALE_HEIGHT);
+//copy_surface_to_framebuf(fscale_buf,0,SCALE_POS,g_screen_size_x,SCALE_HEIGHT);
 }
 
 //-----
 
-void draw_spectrum(short colour)
-{
-int screen_val;
-int16_t level_db;
-int spec_base;
-int xpos;
-
-spec_base = SPEC_BASE_LINE;
-
-draw_grid();
-
-//make Spectrum frame
-//plot_thick_rectangle(frame_buf,4,0,g_screen_size_x,SPEC_HEIGHT,C_BLUE);
-
-copy_surface_to_framebuf(spec_buf,0,0,g_screen_size_x,SPEC_HEIGHT);
-
-xpos = 12; //left hand start pos of spectrum
-
-for(int n = 1; n < FFT_SIZE; n++)
-
-    {
-colour = C_RED;
-
-    level_db = n; //= kiwi_buf[n] - 25 + (3*g_zoom); //should be compensated for each Zoom value
-    //120 as minimum - gives us db120
-    screen_val= 120 + level_db; //positive relatve to -120
-    screen_val *=2; //Scale up * 2
-    //Guard against over value
-    if(screen_val <0) screen_val =0;
-    if(screen_val >= SPEC_HEIGHT) screen_val = SPEC_HEIGHT-1;
-    //screen origin is bottom left.
-  //  plot_line(spec_buf,xpos,spec_base , xpos,spec_base - screen_val,colour); //Plots pos've from bottom left.
-    plot_line(spec_buf,0,100 , 400,0,colour);
 
 
-    xpos++;
- //   xtra++;
-    }
-
-//make Spectrum frame
-//plot_thick_rectangle(frame_buf,4,0,g_screen_size_x-10,SPEC_HEIGHT+10,C_BLUE);
-
-
-colour = C_MAGENTA;
- plot_line(spec_buf,0,100 , 900,80,colour);
-
-copy_surface_to_framebuf(spec_buf,0,6,g_screen_size_x,SPEC_HEIGHT);
-printf(" FOUND %d \n",__LINE__);
-
-usleep(500000);
-}
-
-//-----
-
-void draw_waterfall()
-{
-uint16_t colour;
-int point;
-int inx;
-int xpos;
-unsigned int xtra;
-int wfall_width;
-
-wfall_width = g_screen_size_x;
-xpos = 12; //FIXME X POS WFALL
-
-//Draw first line of waterfall
-for(point=0;point<1024;point++) //FFT SIZE
-    {
-    //FIXME something like this needed here ??? 
-    //level_db = kiwi_buf[n] - 25 + (3*g_zoom); //should be compensated for each Zoom value
-    //inx = (int) 130+(kiwi_buf[point]); //adjusted
-    //colour = get_colour(inx);
-    //set_pixel(wfall_buf,point + xpos , 0, colour);
-
-    if(INTERP ==1) //Interp from 1024 bins to 1280 pixels. i.e 1 extra pixel per 4 drawn.
-        {
-        if(xtra > 3)
-            {
-            xtra = 0;
-            xpos++;
-            set_pixel(wfall_buf,point + xpos , 0, colour);
-            }
-        }
-    xtra++;
-    }
-
-//Scroll all lines down, starting from the bottom
-for(int line = WFALL_HEIGHT; line >=0 ; line--)
-    {
-    for(int x = 0;x<wfall_width;x++)
-        {
-        wfall_buf[((line+1)*wfall_width)+wfall_width+x] = wfall_buf[(line * wfall_width)+x];
-        }
-    }
-copy_surface_to_framebuf(wfall_buf,xpos,WFALL_POS,g_screen_size_x,WFALL_HEIGHT);
-}
 
 
 /////////////////////////////////////////////////////
 
-
-
-
-void draw_trace(short colour)
+void draw_trace(uint16_t * buf, int y_pos,int y_size,char * vid_data ,short colour)
 {
-int screen_val;
-int16_t level_db;
-int spec_base;
-int xpos;
 int dummy;
-char yval;
+char y_val;
 char hold;
-spec_base = SPEC_BASE_LINE;
+//spec_base = CHAN_POS_A;
 
-draw_grid();
-
-//make Spectrum frame
-//plot_thick_rectangle(frame_buf,4,0,g_screen_size_x,SPEC_HEIGHT,C_BLUE);
-
-copy_surface_to_framebuf(spec_buf,0,0,g_screen_size_x,SPEC_HEIGHT);
-
-xpos = 12; //left hand start pos of spectrum
-
-colour = C_MAGENTA;
+draw_grid(buf);
 
 for(int p=0;p<1024;p++)
     {
-
-    yval = trace_a[p];
-
-    //level_db = n; //= kiwi_buf[n] - 25 + (3*g_zoom); //should be compensated for each Zoom value
-    //120 as minimum - gives us db120
-    //screen_val= 120 + level_db; //positive relatve to -120
-    //screen_val *=2; //Scale up * 2
-    //Guard against over value
-    //if(screen_val <0) screen_val =0;
-    //if(screen_val >= SPEC_HEIGHT) screen_val = SPEC_HEIGHT-1;
-    //screen origin is bottom left.
-  //  plot_line(spec_buf,xpos,spec_base , xpos,spec_base - screen_val,colour); //Plots pos've from bottom left.
-    plot_line(spec_buf,p,hold , p,yval,colour);
-    hold = yval;
+    y_val = vid_data[p];
+    plot_line(buf,p,hold , p,y_val,colour);
+    hold = y_val;
 
     }
 
-//make Spectrum frame
-//plot_thick_rectangle(frame_buf,4,0,g_screen_size_x-10,SPEC_HEIGHT+10,C_BLUE);
+
 
 
 //olour = C_MAGENTA;
-// plot_line(spec_buf,0,100 , 900,80,colour);
+// plot_line(chan_buf_a,0,100 , 900,80,colour);
 
 
-ioctl(fbfd, FBIO_WAITFORVSYNC, &dummy); // Wait for frame sync
+//ioctl(fbfd, FBIO_WAITFORVSYNC, &dummy); // Wait for frame sync
 
-copy_surface_to_framebuf(spec_buf,0,6,g_screen_size_x,SPEC_HEIGHT);
-printf(" FOUND %d \n",__LINE__);
+copy_surface_to_framebuf(buf,0,y_pos,g_screen_size_x,y_size);
+//printf(" FOUND %d \n",__LINE__);
 
 }
 
@@ -257,18 +139,6 @@ if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo)) // Get variable screen information
 	    printf("Error reading variable screen info.\n");
 printf("Display info %dx%d, %d bpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel );
 
-//https://www.eevblog.com/forum/microcontrollers/(linux)-inhibit-kernel-messages-and-cursor  - hide cursor
-/*
-char *kbfds = "/dev/tty";
-int kbfd = open(kbfds, O_WRONLY);
-if (kbfd >= 0) {
-    ioctl(kbfd, KDSETMODE, KD_GRAPHICS);
-    }
-    else {
-        printf("Could not open %s.\n", kbfds);
-    }
-*/
-
 g_screen_size_x = vinfo.xres;
 screen_size_y = vinfo.yres;
 bytes_pp = vinfo.bits_per_pixel/8;
@@ -276,36 +146,53 @@ bytes_pp = vinfo.bits_per_pixel/8;
 int fb_data_size = g_screen_size_x * screen_size_y * bytes_pp;
 printf (" FB data size = %d \n",fb_data_size);
 
-spec_buf = malloc(g_screen_size_x*SPEC_HEIGHT*bytes_pp);
+chan_buf_a = malloc(g_screen_size_x*CHAN_HEIGHT_A*bytes_pp);
+chan_buf_b = malloc(g_screen_size_x*CHAN_HEIGHT_B*bytes_pp);
+chan_buf_c = malloc(g_screen_size_x*CHAN_HEIGHT_C*bytes_pp);
+chan_buf_d = malloc(g_screen_size_x*CHAN_HEIGHT_D*bytes_pp);
+
 wfall_buf = malloc(g_screen_size_x*WFALL_HEIGHT*bytes_pp);
-cmd_buf = malloc(g_screen_size_x*CMD_HEIGHT*bytes_pp);
-fscale_buf = malloc(g_screen_size_x*SCALE_HEIGHT*bytes_pp);
+//cmd_buf = malloc(g_screen_size_x*CMD_HEIGHT*bytes_pp);
+//fscale_buf = malloc(g_screen_size_x*SCALE_HEIGHT*bytes_pp);
 
 // map framebuffer to user memory 
 frame_buf = (uint16_t * ) mmap(0, fb_data_size, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
-
 clear_screen(rgb565(0,0,0));
-
-
-//plot_large_string(frame_buf,320,600,"WAITING FOR KIWI",C_WHITE);
-//draw_freq_scale();
-
-//Start the KIWI callback thread
-//pthread_create(&kiwi_callback,NULL, (void *) setup_kiwi,NULL);
-
 printf(" SETUP ==========================  \n");
 
+
+
+//make Spectrum frame
+//plot_thick_rectangle(frame_buf,4,0,g_screen_size_x-10,SPEC_HEIGHT+10,C_BLUE);
 
 while(1)
     {
 
+    for(int r = 0; r<1024;r++)
+        {
+        trace_a[r] = rand() % (80 - 1 + 1) + 1;
+        }
 for(int r = 0; r<1024;r++)
-    {
-    trace_a[r] = rand() % (80 - 1 + 1) + 1;
-    }
+        {
+        trace_b[r] = r/32;
+        }
+for(int r = 0; r<1024;r++)
+        {
+        trace_c[r] = rand() % (80 - 1 + 1) + 1;
+        }
+for(int r = 0; r<1024;r++)
+        {
+        trace_d[r] = rand() % (80 - 1 + 1) + 1;
+        }
 
-draw_trace(C_BLACK);
-usleep(671000);
+
+
+    draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A,trace_a,C_RED);
+    draw_trace(chan_buf_b,CHAN_POS_B,CHAN_HEIGHT_B, trace_b, C_GREEN);
+    draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, trace_c, C_BLUE);
+    draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, trace_d, C_YELLOW);
+
+    usleep(671000);
 
     }
 //loop
@@ -329,12 +216,6 @@ printf(" END NW SETUP \n");
 //for(int t = 0; t < g_ntabs;t++)
  //   plot_thick_rectangle(cmd_buf,t * g_tab_width,0,(t*g_tab_width) + g_tab_width,CMD_HEIGHT-6,C_YELLOW);
 
-
-
-//copy_surface_to_framebuf(cmd_buf,0,CMD_POS,g_screen_size_x,CMD_HEIGHT); 
-
-//Start the Shuttle thread.
-//pthread_create(&shuttle_callback,NULL, (void *) shuttle,NULL);
 
 printf(" DONE \n");
 
