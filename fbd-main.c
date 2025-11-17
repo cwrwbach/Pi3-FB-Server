@@ -6,6 +6,7 @@
 #include "fbd-jet.h"
 
 #define INTERP 0 //to accomodate 1024/1280 pixels width
+#define MAX_IN_BUF 1536
 
 //Screen data
 int fbfd;
@@ -35,6 +36,11 @@ char trace_b[1024];
 char trace_c[1024];
 char trace_d[1024];
 
+char rx_msg_buffer[2048];
+extern struct sockaddr_in servaddr_1, cliaddr_1;
+extern socklen_t cliLen_1;
+extern int sockfd_1;
+
 //================
 
 void draw_grid(uint16_t * buf)
@@ -48,7 +54,7 @@ h_gap = CHAN_HEIGHT_A/(n_horiz);
 
 //fill backround of SPEC
 for(int b=0;b<CHAN_HEIGHT_A * g_screen_size_x;b++)
-    buf[b] = rgb565(0,32,0);
+    buf[b] = rgb565(0,48,0);
 
 for(i=1;i<n_horiz;i++){ 
    // printf(" i=%d \n",i);
@@ -141,14 +147,12 @@ printf(" SETUP ==========================  \n");
 
 
 //make Spectrum frame
-plot_thick_rectangle(frame_buf,4,CHAN_POS_A,g_screen_size_x-10,CHAN_HEIGHT_A,C_BLUE);
+plot_thick_line(frame_buf,10,CHAN_POS_A+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_A+CHAN_SPACE,C_BLUE);
+plot_thick_line(frame_buf,10,CHAN_POS_B+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_B+CHAN_SPACE,C_BLUE);
+plot_thick_line(frame_buf,10,CHAN_POS_C+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_C+CHAN_SPACE,C_BLUE);
+plot_thick_line(frame_buf,10,CHAN_POS_D+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_D+CHAN_SPACE,C_BLUE);
 
-plot_thick_rectangle(frame_buf,4,CHAN_POS_B,g_screen_size_x-10,CHAN_HEIGHT_B,C_BLUE);
-plot_thick_rectangle(frame_buf,4,CHAN_POS_C,g_screen_size_x-10,CHAN_HEIGHT_C,C_BLUE);
-plot_thick_rectangle(frame_buf,4,CHAN_POS_D,g_screen_size_x-10,CHAN_HEIGHT_D,C_BLUE);
-
-
-while(1)
+if(1)
     {
 //make some test data...
 
@@ -169,25 +173,34 @@ while(1)
         trace_d[r] = (rand() % (80 - 1 + 1) + 1) /4;
         }
 //draw all four to test
-    draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, trace_a, C_RED);
-    draw_trace(chan_buf_b,CHAN_POS_B,CHAN_HEIGHT_B, trace_b, C_GREEN);
-    draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, trace_c, C_BLUE);
-    draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, trace_d, C_YELLOW);
+  //  draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, trace_a, C_RED);
+  //  draw_trace(chan_buf_b,CHAN_POS_B,CHAN_HEIGHT_B, trace_b, C_GREEN);
+  //  draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, trace_c, C_BLUE);
+  //  draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, trace_d, C_YELLOW);
 
     usleep(1000000);
     }
-
-//do_network_setup();
+do_network_setup();
 
 printf(" END NW SETUP \n");
-/*
- int n = recvfrom(sockfd_1, & cmd_msg_buffer, MAX_IN_BUF,MSG_DONTWAIT, NULL,NULL); 
-    if(n > 0) 
-        command_selection(n);
 
-  packet_buf_a[0] = 0x42; //Force ID type to be video 1
-    sendto(sockfd_1, packet_buf_a, 1024, 0, (struct sockaddr *) &	cliaddr_1, sizeof(cliaddr_1));
+printf(" Bound, waiting for incoming xmas \n");
+int len  = recvfrom(sockfd_1, & rx_msg_buffer, MAX_IN_BUF, 0, ( struct sockaddr *) &cliaddr_1, 
+                &len); 
+printf(" Got a caller, >> %s \n",rx_msg_buffer);
+
+draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, rx_msg_buffer, C_RED);
+
+/*
+
+ int n = recvfrom(sockfd_1, & cmd_msg_buffer, MAX_IN_BUF,MSG_DONTWAIT, NULL,NULL); 
+
+    if(n > 0) 
+      printf("GOTAPAK\n");
 */
+//  packet_buf_a[0] = 0x42; //Force ID type to be video 1
+//    sendto(sockfd_1, packet_buf_a, 1024, 0, (struct sockaddr *) &	cliaddr_1, sizeof(cliaddr_1));
+
 
 printf(" DONE \n");
 }

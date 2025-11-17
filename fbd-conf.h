@@ -6,15 +6,20 @@
 
 #define FRAME_BUF_HEIGHT 600 //768
 
-#define CHAN_HEIGHT_A 100
-#define CHAN_HEIGHT_B 100
-#define CHAN_HEIGHT_C 100
-#define CHAN_HEIGHT_D 100
+#define CHAN_HEIGHT_A 125
+#define CHAN_HEIGHT_B 125
+#define CHAN_HEIGHT_C 125
+#define CHAN_HEIGHT_D 125
+
+#define CHAN_SPACE 130
 
 #define CHAN_POS_A 0
-#define CHAN_POS_B 120
-#define CHAN_POS_C 240
-#define CHAN_POS_D 360
+#define CHAN_POS_B CHAN_POS_A+CHAN_SPACE+5
+#define CHAN_POS_C CHAN_POS_B+CHAN_SPACE+5
+#define CHAN_POS_D CHAN_POS_C+CHAN_SPACE+5
+
+//#define CHAN_POS_C 280
+//#define CHAN_POS_D 420
 
 //#define SPEC_BASE_LINE 159
 

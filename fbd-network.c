@@ -44,9 +44,9 @@ struct sockaddr_in servaddr_1, cliaddr_1;
 socklen_t cliLen_1;
 int sockfd_1;
 
-struct sockaddr_in servaddr_1, cliaddr_1;
-socklen_t cliLen_1;
-int sockfd_1;
+//struct sockaddr_in servaddr_1, cliaddr_1;
+//socklen_t cliLen_1;
+//int sockfd_1;
 
 
 
@@ -83,15 +83,16 @@ if ( bind(sockfd_1,(const struct sockaddr *)&servaddr_1, sizeof(servaddr_1)) < 0
 
   
 
-while(1)
+while(0)
 {
 len = sizeof(cliaddr_1);
 
-printf(" Bound, waiting for incoming \n");
+printf(" Bound, waiting for incoming tulip\n");
 recvfrom(sockfd_1, & rx_msg_buffer, MAX_IN_BUF, 0, ( struct sockaddr *) &cliaddr_1, 
                 &len); 
 printf(" Got a caller, >> %s \n",rx_msg_buffer);
 
+//draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, trace_a, C_RED);
 
 sprintf(respond,"Message from Server %d \n",debug++);
 // sending ack \n");
