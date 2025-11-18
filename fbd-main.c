@@ -6,7 +6,7 @@
 #include "fbd-jet.h"
 
 #define INTERP 0 //to accomodate 1024/1280 pixels width
-#define MAX_IN_BUF 1536
+#define MAX_IN_BUF 1024
 
 //Screen data
 int fbfd;
@@ -38,7 +38,7 @@ char trace_d[1024];
 
 char rx_msg_buffer[2048];
 extern struct sockaddr_in servaddr_1, cliaddr_1;
-extern socklen_t cliLen_1;
+socklen_t cliLen;
 extern int sockfd_1;
 
 //================
@@ -185,11 +185,17 @@ do_network_setup();
 printf(" END NW SETUP \n");
 
 printf(" Bound, waiting for incoming xmas \n");
-int len  = recvfrom(sockfd_1, & rx_msg_buffer, MAX_IN_BUF, 0, ( struct sockaddr *) &cliaddr_1, 
-                &len); 
-printf(" Got a caller, >> %s \n",rx_msg_buffer);
+while(1)
+	{
+
+int len  = recvfrom(sockfd_1, & rx_msg_buffer, 1020, 0, ( struct sockaddr *) &cliaddr_1, 
+                &cliLen); 
+printf(" RECD %d \n",len);
 
 draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, rx_msg_buffer, C_RED);
+usleep(1000);
+
+	}
 
 /*
 
