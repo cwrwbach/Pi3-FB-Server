@@ -1,5 +1,7 @@
 #include <linux/kd.h>
 #include <inttypes.h>
+#include <sys/socket.h>
+
 #include "fbd-conf.h"
 #include "fbd-lib.h"
 #include "fbd-colours.h"
@@ -190,7 +192,7 @@ while(1)
 
 int len  = recvfrom(sockfd_1, & rx_msg_buffer, 1020, 0, ( struct sockaddr *) &cliaddr_1, 
                 &cliLen); 
-printf(" RECD %d \n",len);
+//printf(" RECD %d \n",len);
 
 draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, rx_msg_buffer, C_RED);
 usleep(1000);
