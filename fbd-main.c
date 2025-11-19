@@ -1,14 +1,40 @@
 #include <linux/kd.h>
 #include <inttypes.h>
+#include <stdint.h>
+#include <errno.h>
+#include <signal.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/ip.h>
 
-#include "fbd-conf.h"
 #include "fbd-lib.h"
 #include "fbd-colours.h"
-#include "fbd-jet.h"
+//#include "fbd-jet.h"
 
-#define INTERP 0 //to accomodate 1024/1280 pixels width
-#define MAX_IN_BUF 1024
+#define PORT_1 11361
+
+#define MAX_PAK_LEN 1056
+
+#define FRAME_BUF_HEIGHT 600 //768 (ToGuard monitor)
+
+#define CHAN_HEIGHT_A 125
+#define CHAN_HEIGHT_B 125
+#define CHAN_HEIGHT_C 125
+#define CHAN_HEIGHT_D 125
+#define MAX_Y_VAL 120
+
+#define CHAN_SPACE 130
+
+#define CHAN_POS_A 0
+#define CHAN_POS_B CHAN_POS_A+CHAN_SPACE+5
+#define CHAN_POS_C CHAN_POS_B+CHAN_SPACE+5
+#define CHAN_POS_D CHAN_POS_C+CHAN_SPACE+5
+
+
 
 //Screen data
 int fbfd;
@@ -29,7 +55,7 @@ uint16_t * cmd_buf;
 uint16_t * fscale_buf;
 
 //Prototypes
-void do_network_setup(void);
+int do_network_setup(void);
 void draw_spectrum(short);
 void draw_waterfall();
 
@@ -38,10 +64,11 @@ char trace_b[1024];
 char trace_c[1024];
 char trace_d[1024];
 
-char rx_msg_buffer[2048];
-extern struct sockaddr_in servaddr_1, cliaddr_1;
-socklen_t cliLen;
-extern int sockfd_1;
+//Sockets
+struct sockaddr_in servaddr_1, cliaddr_1;
+int sockfd_1;
+socklen_t cliLen_1;
+uint8_t rx_msg_buffer[2048];
 
 //================
 
@@ -62,8 +89,7 @@ for(i=1;i<n_horiz;i++){
    // printf(" i=%d \n",i);
     plot_dotted_line(buf,0,i*h_gap,g_screen_size_x,i*h_gap,C_YELLOW);//YELLOW);
     }
-plot_dotted_line(buf,g_screen_size_x/2,0,g_screen_size_x/2,CHAN_HEIGHT_A,C_YELLOW);//YELLOW);
-
+plot_dotted_line(buf,g_screen_size_x/2,0,g_screen_size_x/2,CHAN_HEIGHT_A-10,C_YELLOW);//YELLOW);
 }
 
 //-----
@@ -102,6 +128,9 @@ draw_grid(buf);
 for(int p=0;p<1024;p++)
     {
     y_val = vid_data[p];
+    if(y_val > MAX_Y_VAL) 
+        y_val = MAX_Y_VAL;
+    y_val = MAX_Y_VAL - y_val; //invert trace - origin bottom left.
     plot_line(buf,p,hold , p,y_val,colour);
     hold = y_val;
     }
@@ -111,11 +140,32 @@ copy_surface_to_framebuf(buf,0,y_pos,g_screen_size_x,y_size);
 }
 
 
+//========================
+
+int do_network_setup()
+{
+    // Creating socket file descriptor 
+if ( (sockfd_1 = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) 
+	printf("Socket creation failed /n"); 
+       
+// Fill server information 
+servaddr_1.sin_family    = AF_INET; // IPv4 
+servaddr_1.sin_addr.s_addr = INADDR_ANY; 
+servaddr_1.sin_port = htons(PORT_1); 
+      
+// Bind the socket 
+if ( bind(sockfd_1,(const struct sockaddr *)&servaddr_1, sizeof(servaddr_1)) < 0 ) 
+    printf("Bind failed\n"); 
+
+return 0;
+}
 
 //===================================================
 
 int main()
 {
+int pak_len;
+
 // Open the framebuffer device file for reading and writing
 fbfd = open("/dev/fb0", O_RDWR); 
 if (fbfd == -1) 
@@ -146,13 +196,11 @@ frame_buf = (uint16_t * ) mmap(0, fb_data_size, PROT_READ | PROT_WRITE, MAP_SHAR
 clear_screen(rgb565(0,0,0));
 printf(" SETUP ==========================  \n");
 
-
-
 //make Spectrum frame
 plot_thick_line(frame_buf,10,CHAN_POS_A+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_A+CHAN_SPACE,C_BLUE);
 plot_thick_line(frame_buf,10,CHAN_POS_B+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_B+CHAN_SPACE,C_BLUE);
 plot_thick_line(frame_buf,10,CHAN_POS_C+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_C+CHAN_SPACE,C_BLUE);
-plot_thick_line(frame_buf,10,CHAN_POS_D+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_D+CHAN_SPACE,C_BLUE);
+//plot_thick_line(frame_buf,10,CHAN_POS_D+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_D+CHAN_SPACE,C_BLUE);
 
 if(1)
     {
@@ -180,35 +228,26 @@ if(1)
   //  draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, trace_c, C_BLUE);
   //  draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, trace_d, C_YELLOW);
 
-    usleep(1000000);
+    usleep(100000);
     }
 do_network_setup();
 
 printf(" END NW SETUP \n");
 
-printf(" Bound, waiting for incoming xmas \n");
+printf(" Bound, waiting for incoming \n");
 while(1)
 	{
-
-int len  = recvfrom(sockfd_1, & rx_msg_buffer, 1020, 0, ( struct sockaddr *) &cliaddr_1, 
-                &cliLen); 
-//printf(" RECD %d \n",len);
-
-draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, rx_msg_buffer, C_RED);
-usleep(1000);
-
+    pak_len  = recvfrom(sockfd_1, & rx_msg_buffer, 1020, 0, ( struct sockaddr *) &cliaddr_1, 
+                &cliLen_1); 
+    printf("GOTAPAK \n");
+    if(pak_len > MAX_PAK_LEN)
+        {
+        pak_len = MAX_PAK_LEN;
+        printf(" RECD EXCESS PAK LEN ! %d \n",pak_len);
+        }
+    draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, rx_msg_buffer, C_RED);
+    usleep(1000);
 	}
-
-/*
-
- int n = recvfrom(sockfd_1, & cmd_msg_buffer, MAX_IN_BUF,MSG_DONTWAIT, NULL,NULL); 
-
-    if(n > 0) 
-      printf("GOTAPAK\n");
-*/
-//  packet_buf_a[0] = 0x42; //Force ID type to be video 1
-//    sendto(sockfd_1, packet_buf_a, 1024, 0, (struct sockaddr *) &	cliaddr_1, sizeof(cliaddr_1));
-
 
 printf(" DONE \n");
 }
