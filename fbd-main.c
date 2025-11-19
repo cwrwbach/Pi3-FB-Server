@@ -17,7 +17,10 @@
 
 #define PORT_1 11361
 
-#define MAX_PAK_LEN 1024
+
+#define TRACE_LEN 1024
+#define HEADER_LEN 16
+#define MAX_PAK_LEN TRACE_LEN+HEADER_LEN
 
 #define FRAME_BUF_HEIGHT 600 //768 (ToGuard monitor)
 
@@ -68,7 +71,7 @@ uint8_t trace_d[1024];
 struct sockaddr_in servaddr_1, cliaddr_1;
 int sockfd_1;
 socklen_t cliLen_1;
-uint8_t rx_msg_buffer[2048];
+uint8_t rx_msg_buffer[MAX_PAK_LEN];
 
 //================
 
@@ -166,6 +169,8 @@ int main()
 {
 int pak_len;
 
+system("clear");
+
 // Open the framebuffer device file for reading and writing
 fbfd = open("/dev/fb0", O_RDWR); 
 if (fbfd == -1) 
@@ -245,8 +250,15 @@ while(1)
         pak_len = MAX_PAK_LEN;
         printf(" RECD EXCESS PAK LEN ! %d \n",pak_len);
         }
-    draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, rx_msg_buffer, C_RED);
-    usleep(1000);
+
+if(rx_msg_buffer[1] == 0x66)
+    draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, rx_msg_buffer+HEADER_LEN, C_RED);
+if(rx_msg_buffer[1] == 0x69)
+    draw_trace(chan_buf_b,CHAN_POS_B,CHAN_HEIGHT_B, rx_msg_buffer+HEADER_LEN, C_CYAN);
+
+
+
+    //usleep(10000);
 	}
 
 printf(" DONE \n");
