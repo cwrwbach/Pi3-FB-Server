@@ -17,7 +17,7 @@
 
 #define PORT_1 11361
 
-#define MAX_PAK_LEN 1056
+#define MAX_PAK_LEN 1024
 
 #define FRAME_BUF_HEIGHT 600 //768 (ToGuard monitor)
 
@@ -59,10 +59,10 @@ int do_network_setup(void);
 void draw_spectrum(short);
 void draw_waterfall();
 
-char trace_a[1024];
-char trace_b[1024];
-char trace_c[1024];
-char trace_d[1024];
+uint8_t trace_a[1024];
+uint8_t trace_b[1024];
+uint8_t trace_c[1024];
+uint8_t trace_d[1024];
 
 //Sockets
 struct sockaddr_in servaddr_1, cliaddr_1;
@@ -237,9 +237,9 @@ printf(" END NW SETUP \n");
 printf(" Bound, waiting for incoming \n");
 while(1)
 	{
-    pak_len  = recvfrom(sockfd_1, & rx_msg_buffer, 1020, 0, ( struct sockaddr *) &cliaddr_1, 
+    pak_len  = recvfrom(sockfd_1, & rx_msg_buffer, 1024, 0, ( struct sockaddr *) &cliaddr_1, 
                 &cliLen_1); 
-    printf("GOTAPAK \n");
+   // printf("GOTAPAK %d \n",pak_len);
     if(pak_len > MAX_PAK_LEN)
         {
         pak_len = MAX_PAK_LEN;
