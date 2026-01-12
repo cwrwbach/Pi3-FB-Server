@@ -253,14 +253,14 @@ while(1)
 
 if(rx_msg_buffer[1] == 0x66)
     draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, rx_msg_buffer+HEADER_LEN, C_RED);
-if(rx_msg_buffer[1] == 0x69)
+if(rx_msg_buffer[1] == 0x67)
     draw_trace(chan_buf_b,CHAN_POS_B,CHAN_HEIGHT_B, rx_msg_buffer+HEADER_LEN, C_CYAN);
 
-if(rx_msg_buffer[1] == 0x67)
-    draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, rx_msg_buffer+HEADER_LEN, C_CYAN);
-
 if(rx_msg_buffer[1] == 0x68)
-    draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, rx_msg_buffer+HEADER_LEN, C_CYAN);
+    draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, rx_msg_buffer+HEADER_LEN, C_MAGENTA);
+
+if(rx_msg_buffer[1] == 0x69)
+    draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, rx_msg_buffer+HEADER_LEN, C_YELLOW);
 
     //usleep(10000);
 	}
