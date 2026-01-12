@@ -205,7 +205,7 @@ printf(" SETUP ==========================  \n");
 plot_thick_line(frame_buf,10,CHAN_POS_A+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_A+CHAN_SPACE,C_BLUE);
 plot_thick_line(frame_buf,10,CHAN_POS_B+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_B+CHAN_SPACE,C_BLUE);
 plot_thick_line(frame_buf,10,CHAN_POS_C+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_C+CHAN_SPACE,C_BLUE);
-//plot_thick_line(frame_buf,10,CHAN_POS_D+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_D+CHAN_SPACE,C_BLUE);
+plot_thick_line(frame_buf,10,CHAN_POS_D+CHAN_SPACE,g_screen_size_x-10,CHAN_POS_D+CHAN_SPACE,C_BLUE);
 
 if(1)
     {
@@ -231,7 +231,7 @@ if(1)
   //  draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, trace_a, C_RED);
   //  draw_trace(chan_buf_b,CHAN_POS_B,CHAN_HEIGHT_B, trace_b, C_GREEN);
   //  draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, trace_c, C_BLUE);
-  //  draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, trace_d, C_YELLOW);
+ //   draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, trace_d, C_YELLOW);
 
     usleep(100000);
     }
@@ -256,7 +256,11 @@ if(rx_msg_buffer[1] == 0x66)
 if(rx_msg_buffer[1] == 0x69)
     draw_trace(chan_buf_b,CHAN_POS_B,CHAN_HEIGHT_B, rx_msg_buffer+HEADER_LEN, C_CYAN);
 
+if(rx_msg_buffer[1] == 0x67)
+    draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, rx_msg_buffer+HEADER_LEN, C_CYAN);
 
+if(rx_msg_buffer[1] == 0x68)
+    draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, rx_msg_buffer+HEADER_LEN, C_CYAN);
 
     //usleep(10000);
 	}
