@@ -60,7 +60,7 @@ uint16_t * chan_buf_d;
 uint16_t * wfall_buf;
 uint16_t * cmd_buf;
 uint16_t * fscale_buf;
-uint16_t * phase_buf;
+int16_t * phase_buf;
 
 //Prototypes
 int do_network_setup(void);
@@ -134,6 +134,8 @@ void draw_phase(uint16_t * buf, int y_pos,int y_size,char * p_buf ,short colour)
 uint16_t px,py;
 float x,y,len,phs;
 int from_x,from_y;
+static char temp;
+
 
 
 len = 40.0;
@@ -146,12 +148,15 @@ for(int n=0;n<8;n++)
     {
 plot_circle(buf,n*100 + 54,60,40,colour);
 
+//temp++;
+
 from_x=50 + n*100;
 from_y = 60;
 
 //printf("> %d\n",p_buf[n]);
 
-phs = (float) p_buf[n];
+temp = p_buf[n] *2;
+phs = (float) temp; // p_buf[n];
 
 phs /= RAD_BAM ;
 //phs = M_PI /4;
