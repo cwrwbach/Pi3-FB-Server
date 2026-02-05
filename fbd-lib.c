@@ -217,6 +217,28 @@ for(int s=0;s<len;s++,xp++)
     }
 }
 
+
+void plot_circle (uint16_t * dest, int xm, int ym, int r,uint16_t colour)
+{
+int sz_x,sz_y;
+sz_x = 50; //dest->sz_x;
+sz_y = 50 ; //dest->sz_y;
+
+int x = -r, y = 0, err = 2-2*r; // II. Quadrant 
+   do {
+      set_pixel (dest,xm-x, ym+y,colour); //   I. Quadrant 
+      set_pixel (dest,xm-y, ym-x,colour); //  II. Quadrant 
+      set_pixel (dest,xm+x, ym-y,colour); // III. Quadrant 
+      set_pixel (dest,xm+y, ym+x,colour); //  IV. Quadrant 
+      r = err;
+      if (r >  x) err += ++x*2+1; // e_xy+e_x > 0 
+      if (r <= y) err += ++y*2+1; // e_xy+e_y < 0 
+   } while (x < 0);
+}
+
+
+
+
 void copy_surface_to_framebuf(uint16_t *buf,uint loc_x,uint loc_y,uint sz_x,uint sz_y)
 {
 uint start,size;

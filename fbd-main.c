@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/ip.h>
+#include <math.h>
 
 #include "fbd-lib.h"
 #include "fbd-colours.h"
@@ -28,6 +29,7 @@
 #define CHAN_HEIGHT_B 125
 #define CHAN_HEIGHT_C 125
 #define CHAN_HEIGHT_D 125
+#define PHASE_HEIGHT 125
 #define MAX_Y_VAL 120
 
 #define CHAN_SPACE 130
@@ -37,7 +39,9 @@
 #define CHAN_POS_C CHAN_POS_B+CHAN_SPACE+5
 #define CHAN_POS_D CHAN_POS_C+CHAN_SPACE+5
 
+#define PHASE_POS CHAN_POS_D
 
+#define RAD_BAM (double)128/(M_PI)
 
 //Screen data
 int fbfd;
@@ -56,6 +60,7 @@ uint16_t * chan_buf_d;
 uint16_t * wfall_buf;
 uint16_t * cmd_buf;
 uint16_t * fscale_buf;
+uint16_t * phase_buf;
 
 //Prototypes
 int do_network_setup(void);
@@ -92,7 +97,10 @@ for(i=1;i<n_horiz;i++){
    // printf(" i=%d \n",i);
     plot_dotted_line(buf,0,i*h_gap,g_screen_size_x,i*h_gap,C_YELLOW);//YELLOW);
     }
-plot_dotted_line(buf,g_screen_size_x/2,0,g_screen_size_x/2,CHAN_HEIGHT_A-10,C_YELLOW);//YELLOW);
+//plot_dotted_line(buf,g_screen_size_x/2,0,g_screen_size_x/2,CHAN_HEIGHT_A-10,C_YELLOW);//YELLOW);
+
+plot_dotted_line(buf,500,0,500,CHAN_HEIGHT_A-10,C_YELLOW);//YELLOW);//
+
 }
 
 //-----
@@ -119,6 +127,75 @@ plot_large_string(fscale_buf,g_screen_size_x -100,20,f_right,C_WHITE);
 }
 
 //-----
+
+
+void draw_phase(uint16_t * buf, int y_pos,int y_size,char * p_buf ,short colour)
+{
+uint16_t px,py;
+float x,y,len,phs;
+int from_x,from_y;
+
+
+len = 40.0;
+
+for(int b=0;b<PHASE_HEIGHT * g_screen_size_x;b++)
+    buf[b] = rgb565(0,0,24);
+
+
+for(int n=0;n<8;n++)
+    {
+plot_circle(buf,n*100 + 54,60,40,colour);
+
+from_x=50 + n*100;
+from_y = 60;
+
+//printf("> %d\n",p_buf[n]);
+
+phs = (float) p_buf[n];
+
+phs /= RAD_BAM ;
+//phs = M_PI /4;
+//phs = (2 * M_PI) /(((float)n+1) * 2); 
+
+
+
+x = (from_x + len * cos(phs));
+y = from_y + len * sin(phs);
+
+px = (int) x+n ;
+py = (int) y ;
+
+
+
+
+
+plot_line(buf,from_x,from_y,px,py,colour);
+
+    }
+
+//plot_line(buf,10,10 , 100,50,colour);
+/*
+for(int n=0;n<8;n++)
+    {
+plot_circle(buf,n*100 + 54,60,40,colour);
+
+px=0 ; //n*100+105;
+py=0 ; //*100+105;
+//px = vid_data[205 + 100]+15;
+px = p_buf[205 + 100]+15;
+py = p_buf[205]+5; //60; //chan_buf_c[106];
+printf(" %d : %d \n",px,py);
+set_pixel(buf,px,py,colour);
+
+
+    }
+* 
+*/
+
+copy_surface_to_framebuf(buf,0,y_pos,g_screen_size_x,y_size);
+}
+
+//---
 
 void draw_trace(uint16_t * buf, int y_pos,int y_size,char * vid_data ,short colour)
 {
@@ -193,6 +270,7 @@ chan_buf_c = malloc(g_screen_size_x*CHAN_HEIGHT_C*bytes_pp);
 chan_buf_d = malloc(g_screen_size_x*CHAN_HEIGHT_D*bytes_pp);
 
 wfall_buf = malloc(g_screen_size_x*WFALL_HEIGHT*bytes_pp);
+phase_buf = malloc(g_screen_size_x*PHASE_HEIGHT*bytes_pp);
 //cmd_buf = malloc(g_screen_size_x*CMD_HEIGHT*bytes_pp);
 //fscale_buf = malloc(g_screen_size_x*SCALE_HEIGHT*bytes_pp);
 
@@ -231,7 +309,9 @@ if(1)
   //  draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, trace_a, C_RED);
   //  draw_trace(chan_buf_b,CHAN_POS_B,CHAN_HEIGHT_B, trace_b, C_GREEN);
   //  draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, trace_c, C_BLUE);
- //   draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, trace_d, C_YELLOW);
+   // draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, trace_d, C_YELLOW);
+
+//draw_phase(phase_buf,PHASE_POS,PHASE_HEIGHT,trace_d,C_GREEN);
 
     usleep(100000);
     }
@@ -251,6 +331,8 @@ while(1)
         printf(" RECD EXCESS PAK LEN ! %d \n",pak_len);
         }
 
+//rx_msg_buffer[HEADER_LEN + 105] = 50;
+
 if(rx_msg_buffer[1] == 0x66)
     draw_trace(chan_buf_a,CHAN_POS_A,CHAN_HEIGHT_A, rx_msg_buffer+HEADER_LEN, C_RED);
 if(rx_msg_buffer[1] == 0x67)
@@ -260,7 +342,8 @@ if(rx_msg_buffer[1] == 0x68)
     draw_trace(chan_buf_c,CHAN_POS_C,CHAN_HEIGHT_C, rx_msg_buffer+HEADER_LEN, C_MAGENTA);
 
 if(rx_msg_buffer[1] == 0x69)
-    draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, rx_msg_buffer+HEADER_LEN, C_YELLOW);
+  // draw_trace(chan_buf_d,CHAN_POS_D,CHAN_HEIGHT_D, rx_msg_buffer+HEADER_LEN, C_YELLOW);
+    draw_phase(phase_buf,PHASE_POS,PHASE_HEIGHT,rx_msg_buffer+HEADER_LEN,C_GREEN);
 
     //usleep(10000);
 	}
